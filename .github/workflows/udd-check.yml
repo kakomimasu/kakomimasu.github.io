@@ -26,49 +26,30 @@ jobs:
           with:
             app_id: ${{ secrets.APP_ID }}
             private_key: ${{ secrets.PRIVATE_KEY }}
-        - name: Git config
-          run: |
-            git config --local user.email "github-actions[bot]@users.noreply.github.com"
-            git config --local user.name "github-actions[bot]"
         - uses: denoland/setup-deno@v1
           with:
             deno-version: v1.x
-        - name: Install udd
-          run: |
-            deno install -A -f -n udd https://deno.land/x/udd/main.ts
         - name: Check update Deno dependency
+          id: check_udd
           run: |
-            udd ${{ inputs.deps_file }} > udd.txt
+            deno run -A https://deno.land/x/udd/main.ts ${{ inputs.deps_file }} > udd.txt
             cat udd.txt
             sed -n -e '/Successfully updated:/,$p' udd.txt > body.txt
             sed -i -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" body.txt
-        - name: Git diff
-          id: diff
-          continue-on-error: true
-          run: |
-            git add ${{ inputs.deps_file }}
-            git diff --cached --quiet ${{ inputs.deps_file }}
-        - name: Create Branch Name
-          if: steps.diff.outcome == 'failure'
-          id: branch
-          env:
-            TZ: 'Asia/Tokyo'
-          run: | 
-            DATE=`date +"%Y%m%d"`
-            BRANCH_NAME="udd_$DATE"
-            echo "::set-output name=name::$BRANCH_NAME"
-        - name: Git checkout
-          if: steps.diff.outcome == 'failure'
-          run: | 
-            echo ${{ steps.branch.outputs.name }}
-            git checkout -b ${{ steps.branch.outputs.name }}
-        - name: Git commit
-          if: steps.diff.outcome == 'failure'
-          run: |
-            git commit -m "Update dependency"
-            git push --set-upstream origin ${{ steps.branch.outputs.name }}
-        - name: Create Pull Request
-          if: steps.diff.outcome == 'failure'
-          run: gh pr create --title "Update Deno Dependency" --body-file body.txt
-          env:
-            GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+            BODY=`cat body.txt`
+            BODY="${BODY//'%'/'%25'}"
+            BODY="${BODY//$'\n'/'%0A'}"
+            BODY="${BODY//$'\r'/'%0D'}" 
+            echo "::set-output name=body_text::$BODY"
+            rm -f udd.txt
+            rm -f body.txt
+        - name: Create pull request
+          uses: peter-evans/create-pull-request@v3
+          with:
+            commit-message: "chore(deps): update deno dependencies"
+            token: ${{ steps.generate_token.outputs.token }}
+            branch: 'deno-dependabot'
+            delete-branch: true
+            title: 'Update Deno Dependency'
+            body: ${{ steps.check_udd.outputs.body_text}}
+            labels: 'dependencies'
