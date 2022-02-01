@@ -46,10 +46,10 @@ jobs:
         - name: Create pull request
           uses: peter-evans/create-pull-request@v3
           with:
-            commit-message: "chore(deps): update deno dependencies"
+            commit-message: "build(deps): Bump deno dependencies"
             token: ${{ steps.generate_token.outputs.token }}
             branch: 'deno-dependabot'
             delete-branch: true
-            title: 'Update Deno Dependency'
-            body: ${{ steps.check_udd.outputs.body_text}}
+            title: 'build(deps): Bump deno dependencies'
+            body: ${{ steps.check_udd.outputs.body_text }}
             labels: 'dependencies'
