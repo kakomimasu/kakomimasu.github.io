@@ -32,7 +32,11 @@ jobs:
         - name: Check update Deno dependency
           id: check_udd
           run: |
-            deno run -A https://deno.land/x/udd/main.ts ${{ inputs.deps_file }} > udd.txt
+            if [ -n "${{ inputs.deps_file }}" ]; then
+              deno run -A https://deno.land/x/udd/main.ts ${{ inputs.deps_file }} > udd.txt
+            else
+              deno run -A https://deno.land/x/udd/main.ts **/*.ts **/*.js > udd.txt
+            fi
             cat udd.txt
             sed -n -e '/Successfully updated:/,$p' udd.txt > body.txt
             sed -i -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" body.txt
