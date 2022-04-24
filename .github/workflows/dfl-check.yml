@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       config_file:
-        required: true
+        required: false
         type: string
 
 jobs:
@@ -20,7 +20,15 @@ jobs:
             deno-version: v1.x
         - name: Run fmt
           run: |
-            deno fmt -c ${{ inputs.config_file }} --check
+            if [ -n "${{ inputs.config_file }}" ]; then
+              deno fmt -c ${{ inputs.config_file }} --check
+            else
+              deno fmt --check
+            fi
         - name: Run lint
           run: |
-            deno lint -c ${{ inputs.config_file }}
+            if [ -n "${{ inputs.config_file }}" ]; then
+              deno lint -c ${{ inputs.config_file }}
+            else
+              deno lint
+            fi
