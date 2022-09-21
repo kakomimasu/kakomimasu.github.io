@@ -16,44 +16,44 @@ jobs:
   udd-check:
     runs-on: ubuntu-latest
     steps:
-        - name: Show inputs
-          run: |
-            echo "deps file is ${{ inputs.deps_file }}"
-        - uses: actions/checkout@v2
-        - name: Generate token
-          id: generate_token
-          uses: tibdex/github-app-token@v1
-          with:
-            app_id: ${{ secrets.APP_ID }}
-            private_key: ${{ secrets.PRIVATE_KEY }}
-        - uses: denoland/setup-deno@v1
-          with:
-            deno-version: v1.x
-        - name: Check update Deno dependency
-          id: check_udd
-          run: |
-            if [ -n "${{ inputs.deps_file }}" ]; then
-              deno run -A https://deno.land/x/udd/main.ts ${{ inputs.deps_file }} > udd.txt
-            else
-              deno run -A https://deno.land/x/udd/main.ts **/*.ts **/*.js > udd.txt
-            fi
-            cat udd.txt
-            sed -n -e '/Successfully updated:/,$p' udd.txt > body.txt
-            sed -i -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" body.txt
-            BODY=`cat body.txt`
-            BODY="${BODY//'%'/'%25'}"
-            BODY="${BODY//$'\n'/'%0A'}"
-            BODY="${BODY//$'\r'/'%0D'}" 
-            echo "::set-output name=body_text::$BODY"
-            rm -f udd.txt
-            rm -f body.txt
-        - name: Create pull request
-          uses: peter-evans/create-pull-request@v3
-          with:
-            commit-message: "build(deps): Bump deno dependencies"
-            token: ${{ steps.generate_token.outputs.token }}
-            branch: 'deno-dependabot'
-            delete-branch: true
-            title: 'build(deps): Bump deno dependencies'
-            body: ${{ steps.check_udd.outputs.body_text }}
-            labels: 'dependencies'
+      - name: Show inputs
+        run: |
+          echo "deps file is ${{ inputs.deps_file }}"
+      - uses: actions/checkout@v2
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Check update Deno dependency
+        id: check_udd
+        run: |
+          if [ -n "${{ inputs.deps_file }}" ]; then
+            deno run -A https://deno.land/x/udd/main.ts ${{ inputs.deps_file }} > udd.txt
+          else
+            deno run -A https://deno.land/x/udd/main.ts **/*.ts **/*.js *.ts *.js > udd.txt
+          fi
+          cat udd.txt
+          sed -n -e '/Successfully updated:/,$p' udd.txt > body.txt
+          sed -i -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" body.txt
+          BODY=`cat body.txt`
+          BODY="${BODY//'%'/'%25'}"
+          BODY="${BODY//$'\n'/'%0A'}"
+          BODY="${BODY//$'\r'/'%0D'}" 
+          echo "::set-output name=body_text::$BODY"
+          rm -f udd.txt
+          rm -f body.txt
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          commit-message: "build(deps): Bump deno dependencies"
+          token: ${{ steps.generate_token.outputs.token }}
+          branch: "deno-dependabot"
+          delete-branch: true
+          title: "build(deps): Bump deno dependencies"
+          body: ${{ steps.check_udd.outputs.body_text }}
+          labels: "dependencies"
